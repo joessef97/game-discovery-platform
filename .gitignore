@@ -112,3 +112,6 @@ frontend/build/
 
 # Vercel
 .vercel
+
+.vercel
+.env*

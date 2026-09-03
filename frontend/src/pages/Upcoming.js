@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCalendarAlt, FaClock, FaGamepad, FaDesktop, FaXbox } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaDesktop, FaXbox } from 'react-icons/fa';
 import { SiPlaystation, SiNintendoswitch } from 'react-icons/si';
 import gameService from '../services/gameService';
 

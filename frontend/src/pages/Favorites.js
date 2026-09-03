@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHeart, FaTrash, FaGamepad } from 'react-icons/fa';
+import { FaTrash, FaGamepad } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
 
