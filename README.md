@@ -2,6 +2,8 @@
 
 A full-stack web application for discovering games, tracking what you want to play, and building a personal collection — powered by live data from the [Twitch IGDB API](https://api-docs.igdb.com/).
 
+[![Tests](https://github.com/joessef97/game-discovery-platform/actions/workflows/tests.yml/badge.svg)](https://github.com/joessef97/game-discovery-platform/actions/workflows/tests.yml)
+
 **Stack:** React 18 · Express · MongoDB · JWT · IGDB API
 
 ---
@@ -51,6 +53,7 @@ The app supports account registration with email-based password recovery, full-t
 
 ```
 game-discovery-platform/
+├── api/index.js                   # Vercel serverless entry (mounts the Express app)
 ├── backend/
 │   ├── middleware/auth.js         # JWT verification
 │   ├── models/User.js             # user + embedded favorites/wishlist/history
@@ -63,7 +66,9 @@ game-discovery-platform/
 │   ├── services/
 │   │   ├── igdbService.js         # IGDB client: OAuth, queries, response mapping
 │   │   └── emailService.js        # Resend wrapper
-│   └── server.js                  # app entry, CORS, rate limiting, routing
+│   ├── app.js                     # Express app: CORS, rate limiting, DB, routing
+│   ├── server.js                  # local dev entry (listens on PORT)
+│   └── tests/                     # Jest + Supertest suites
 └── frontend/
     └── src/
         ├── components/            # Navbar, Sidebar, GameCard, HeroBanner, PrivateRoute
@@ -73,6 +78,8 @@ game-discovery-platform/
 ```
 
 **Request flow:** React page → service module → shared Axios instance (injects `Authorization` header, handles 401 by clearing the token and redirecting) → Express route → `igdbService` or MongoDB → normalised response.
+
+In production both halves run on Vercel from one origin: the React build is served statically and `/api/*` is routed to a serverless function wrapping the same Express app. The Mongoose connection is cached on `global` so a warm container reuses one pool instead of opening a connection per request.
 
 `igdbService` is the only place that knows IGDB's query language and response shape. Every IGDB record passes through `formatGameData()`, so the rest of the app works with one stable internal shape regardless of what upstream returns.
 
@@ -155,6 +162,30 @@ npm start
 
 Runs on `http://localhost:3000` and proxies API requests to port 5000.
 
+## Testing
+
+```bash
+npm test              # everything
+npm run test:backend  # Jest + Supertest
+npm run test:frontend # React Testing Library
+```
+
+**105 tests**, run on every push by GitHub Actions.
+
+| Suite | Covers |
+|---|---|
+| `backend/tests/igdbService.test.js` | Title normalisation, fuzzy match scoring, Roman numerals, ESRB mapping, response formatting |
+| `backend/tests/auth.test.js` | Registration, login, JWT verification, password hashing, user-enumeration resistance |
+| `backend/tests/wishlist.test.js` | Full CRUD, duplicates, validation, per-user isolation |
+| `backend/tests/favorites.test.js` | Full CRUD, ordering, isolation from wishlist |
+| `backend/tests/games.test.js` | Search, pagination, upcoming/top-rated params, Steam ID resolution, IGDB failure handling |
+| `frontend/src/pages/__tests__` | Wishlist and Recent pages: loading, empty, populated and error states |
+| `frontend/src/services/__tests__` | API client request shapes and URL encoding |
+
+Route tests run against an in-memory MongoDB (`mongodb-memory-server`) and a stubbed IGDB client, so the suite needs no network access and no credentials.
+
+The tests encode the bugs described below, so they cannot silently return: the matcher must prefer a base game over its Deluxe Edition, and must return `null` rather than an arbitrary result when nothing matches.
+
 ## Implementation Notes
 
 A few problems worth calling out, because they shaped the code:
@@ -167,7 +198,7 @@ A few problems worth calling out, because they shaped the code:
 
 ## Roadmap
 
-- Automated test suite (Jest + Supertest for the API, React Testing Library for components)
+- Expand coverage to the remaining pages and components
 - Response caching for IGDB queries to reduce upstream calls
 - Server-side pagination on browse and search
 - Deployment (frontend to Vercel, API to Render)
