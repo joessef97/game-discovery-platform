@@ -109,3 +109,6 @@ monitor.js
 # Build output (any depth, not just repo root)
 build/
 frontend/build/
+
+# Vercel
+.vercel

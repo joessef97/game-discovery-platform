@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// In production the API is served from the same origin (Vercel routes /api/*
+// to the serverless function), so a relative base URL avoids any CORS setup.
+// REACT_APP_API_URL still overrides it if the API is hosted separately.
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
