@@ -83,8 +83,6 @@ const HeroBanner = ({ games = [] }) => {
     return () => clearInterval(t);
   }, [paused, next]);
 
-  const active = heroData[activeIdx];
-
   return (
     <>
     <div

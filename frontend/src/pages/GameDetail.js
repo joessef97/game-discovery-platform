@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { FaStar, FaHeart, FaRegHeart, FaBookmark, FaRegBookmark, FaCalendarAlt, FaArrowLeft, FaGamepad, FaPlay } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
@@ -46,14 +46,7 @@ const GameDetail = () => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadGameDetails();
-      if (isAuthenticated) { checkFavoriteStatus(); checkWishlistStatus(); }
-    }
-  }, [id, isAuthenticated, isSteam]);
-
-  const loadGameDetails = async () => {
+  const loadGameDetails = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -67,21 +60,31 @@ const GameDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isSteam, gameName]);
 
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     try {
       const r = await favoriteService.checkFavoriteStatus(id);
       setIsFavorited(r.isFavorite);
     } catch (e) {}
-  };
+  }, [id]);
 
-  const checkWishlistStatus = async () => {
+  const checkWishlistStatus = useCallback(async () => {
     try {
       const r = await wishlistService.checkWishlistStatus(id);
       setIsWishlisted(r.isWishlisted);
     } catch (e) {}
-  };
+  }, [id]);
+
+
+  useEffect(() => {
+    if (!id) return;
+    loadGameDetails();
+    if (isAuthenticated) {
+      checkFavoriteStatus();
+      checkWishlistStatus();
+    }
+  }, [id, isAuthenticated, loadGameDetails, checkFavoriteStatus, checkWishlistStatus]);
 
   const handleWishlistToggle = async () => {
     if (!isAuthenticated || !game) return;

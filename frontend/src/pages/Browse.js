@@ -96,14 +96,6 @@ const GenreTile = ({ name, icon: Icon, gradient, glow, count, onClick }) => (
   <button
     onClick={onClick}
     className="group relative overflow-hidden rounded-2xl text-left transition-all"
-    style={{
-      background: gradient,
-      border: '1px solid rgba(255,255,255,0.08)',
-      padding: '28px 20px',
-      aspectRatio: '4/3',
-      cursor: 'pointer',
-      width: '100%',
-    }}
     onMouseEnter={(e) => {
       e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
       e.currentTarget.style.boxShadow = `0 16px 40px ${glow}`;

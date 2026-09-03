@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaTrash, FaGamepad } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
 import favoriteService from '../services/favoriteService';
 
 const S = {
@@ -22,7 +21,6 @@ const S = {
 };
 
 const Favorites = () => {
-  const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
