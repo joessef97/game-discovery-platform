@@ -7,7 +7,7 @@ Make the existing game discovery experience reflect current IGDB data and remove
 ## Product scope
 
 - Home trending, top-rated, and upcoming sections use the existing IGDB-backed endpoints. Cards show IGDB game IDs, current metadata, ratings, genres, and release dates. Remove fake personalized recommendations, newsletter success state, and unsupported achievements/community claims.
-- Genre browsing uses IGDB genre IDs and genre-filtered results rather than searching game titles for genre words. Search and browse expose pagination so users can reach results after the first page.
+- Genre and platform browsing use IGDB IDs and filtered results rather than searching game titles for category words. The sidebar's platform shortcut leads to the live platform list. Search and browse expose pagination so users can reach results after the first page.
 - News and Community currently have no real data provider or social backend. Remove these mock-feed pages and their navigation entries; retain navigation to supported discovery features such as charts and upcoming releases.
 - Remove unsupported XP/level/Pro progress presentation from the sidebar/profile unless backed by actual user progression data. Keep real identity, favorite counts, and search history.
 - Keep account registration/login, favorites, wishlist, search history, profile identity, password recovery, charts, upcoming releases, and game details.
