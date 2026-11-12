@@ -23,38 +23,23 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { gameId, gameName, gameImage } = req.body;
-
-    if (!gameId || !gameName || !gameImage) {
-      return res.status(400).json({ message: 'Game ID, name, and image are required' });
+    const parsedGameId = Number(gameId);
+    if (!Number.isSafeInteger(parsedGameId) || parsedGameId <= 0 || !String(gameName || '').trim()) {
+      return res.status(400).json({ message: 'A valid game ID and name are required' });
     }
 
     const user = await User.findById(req.user._id);
+    const existingFavorite = user.favorites.find((fav) => fav.gameId === parseInt(gameId));
+    if (existingFavorite) return res.status(400).json({ message: 'Game is already in favorites' });
 
-    // Check if game is already in favorites
-    const existingFavorite = user.favorites.find(fav => fav.gameId === parseInt(gameId));
-    if (existingFavorite) {
-      return res.status(400).json({ message: 'Game is already in favorites' });
-    }
-
-    // Add to favorites
-    user.favorites.unshift({
-      gameId: parseInt(gameId),
-      gameName,
-      gameImage
-    });
-
+    user.favorites.unshift({ gameId: parsedGameId, gameName: String(gameName).trim(), gameImage: typeof gameImage === 'string' ? gameImage : '' });
     await user.save();
-
-    res.status(201).json({ 
-      message: 'Game added to favorites',
-      favorite: user.favorites[0]
-    });
+    return res.status(201).json({ message: 'Game added to favorites', favorite: user.favorites[0] });
   } catch (error) {
     console.error('Add favorite error:', error);
-    res.status(500).json({ message: 'Error adding game to favorites' });
+    return res.status(500).json({ message: 'Error adding game to favorites' });
   }
 });
-
 // @route   DELETE /api/favorites/:gameId
 // @desc    Remove game from favorites
 // @access  Private

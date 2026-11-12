@@ -101,3 +101,10 @@ describe('favorites', () => {
     expect(list.body[0].gameName).toBe('Second');
   });
 });
+
+  it('allows a favorite without a cover image', async () => {
+    const token = await signUp();
+    const response = await request(app).post('/api/favorites').set('Authorization', `Bearer ${token}`).send({ gameId: 200, gameName: 'Coverless Game' });
+    expect(response.status).toBe(201);
+    expect(response.body.favorite.gameImage).toBe('');
+  });
