@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaHeart, FaHistory, FaGamepad, FaSearch } from 'react-icons/fa';
+import { FaUser, FaHeart, FaHistory, FaSearch } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import gameService from '../services/gameService';
 import favoriteService from '../services/favoriteService';
@@ -63,7 +63,6 @@ const Profile = () => {
         {[
           { icon: <FaHeart style={{color:'var(--color-heart)'}} />, bg: 'rgba(244,63,94,0.1)', val: stats.favoritesCount, label: 'Favorite Games' },
           { icon: <FaHistory style={{color:'var(--accent)'}} />, bg: 'var(--accent-dim)', val: stats.searchHistoryCount, label: 'Searches Made' },
-          { icon: <FaGamepad style={{color:'var(--color-success)'}} />, bg: 'rgba(34,197,94,0.1)', val: '∞', label: 'Games to Discover' },
         ].map((s, i) => (
           <div key={i} style={S.statCard}
             onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--border-hover)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='var(--shadow-lg)';}}
