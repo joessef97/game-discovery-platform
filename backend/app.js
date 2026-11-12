@@ -81,8 +81,22 @@ app.use(rateLimit({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Ensure a DB connection before any route that needs one ─
-app.use(async (_req, res, next) => {
+// ── Ensure a DB connection before routes that need one ─────
+const databaseRoutePrefixes = [
+  '/api/auth',
+  '/api/favorites',
+  '/api/email',
+  '/api/wishlist',
+];
+
+app.use(async (req, res, next) => {
+  const path = req.path;
+  const needsDatabase =
+    path === '/api/games/user/search-history' ||
+    databaseRoutePrefixes.some(prefix => path === prefix || path.startsWith(`${prefix}/`));
+
+  if (!needsDatabase) return next();
+
   try {
     await connectDB();
     next();

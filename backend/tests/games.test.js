@@ -47,6 +47,29 @@ afterEach(async () => {
   jest.clearAllMocks();
 });
 
+it('serves the public game catalog when MongoDB is unavailable', async () => {
+  await app.connectDB();
+  const cache = global._mongooseCache;
+  const previousCache = { ...cache };
+  cache.conn = null;
+  cache.promise = {
+    then(_resolve, reject) {
+      reject(new Error('MongoDB unavailable'));
+    },
+  };
+  igdb.getGenres.mockResolvedValue([{ id: 12, name: 'Role-playing (RPG)' }]);
+
+  try {
+    const res = await request(app).get('/api/games/genres');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: 12, name: 'Role-playing (RPG)' }]);
+    expect(igdb.getGenres).toHaveBeenCalled();
+  } finally {
+    Object.assign(cache, previousCache);
+  }
+});
+
 describe('GET /api/games/search', () => {
   it('requires a query parameter', async () => {
     const res = await request(app).get('/api/games/search');
