@@ -188,3 +188,22 @@ describe('unknown routes', () => {
     expect(res.body.message).toBeTruthy();
   });
 });
+
+  it('includes the account creation date in the register and login payloads', async () => {
+    const registered = await request(app).post('/api/auth/register').send(VALID);
+    expect(registered.body.user.createdAt).toBeTruthy();
+    const loggedIn = await request(app).post('/api/auth/login').send({ email: VALID.email, password: VALID.password });
+    expect(loggedIn.body.user.createdAt).toBeTruthy();
+  });
+
+it('does not log a password reset URL when email delivery fails', async () => {
+  const emailService = require('../services/emailService');
+  const sendReset = jest.spyOn(emailService, 'sendPasswordReset').mockResolvedValue({ success: false, error: 'unavailable' });
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+  const registered = await request(app).post('/api/auth/register').send(VALID);
+  expect(registered.status).toBe(201);
+  await request(app).post('/api/auth/forgot-password').send({ email: VALID.email });
+  const resetUrl = sendReset.mock.calls[0][0].resetUrl;
+  expect(log.mock.calls.flat().join(' ')).not.toContain(resetUrl);
+  sendReset.mockRestore(); log.mockRestore();
+});

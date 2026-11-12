@@ -12,15 +12,12 @@ const generateToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 const safeUser = (user) => ({
-  id:       user._id,
+  id: user._id,
   username: user.username,
-  email:    user.email,
-  avatar:   user.avatar,
-  level:    user.level,
-  xp:       user.xp,
-  isPro:    user.isPro,
+  email: user.email,
+  avatar: user.avatar,
+  createdAt: user.createdAt,
 });
-
 // ── validation chains ────────────────────────────────────
 const registerValidators = [
   body('username')
@@ -158,10 +155,8 @@ router.post('/forgot-password', async (req, res) => {
     });
 
     if (!emailResult.success) {
-      // Log the reset link as fallback so it's never lost
-      console.log('\n🔑 RESET LINK (email failed):', resetUrl, '\n');
+      console.error('Password reset email delivery failed for account.');
     }
-
     return res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (err) {
     console.error('Forgot password error:', err);
