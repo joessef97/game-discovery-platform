@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  emailVerified: { type: Boolean, default: false },
+  emailVerificationToken: { type: String, select: false },
+  emailVerificationExpires: { type: Date, select: false },
   password: {
     type: String,
     required: true,

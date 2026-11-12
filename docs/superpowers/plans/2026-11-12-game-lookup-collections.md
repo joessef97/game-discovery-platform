@@ -51,6 +51,6 @@
 
 - [x] **Step 1: Write the favorite test** in `backend/tests/favorites.test.js`: `accepts a favorite without a cover image`; assert status 201 and stored `gameImage` is `''`.
 - [x] **Step 2: Run the focused test** with `cd backend && npx jest --runInBand tests/favorites.test.js`. Expected: the route rejects the missing image with status 400.
-- [x] **Step 3: Make artwork optional** in `backend/routes/favorites.js`, preserving ID/name validation and duplicate checks.
+- [x] **Step 3: Make artwork optional** in `backend/routes/favorites.js`, preserving ID/name validation and duplicate checks; accept only positive decimal IGDB IDs and compare duplicates using the parsed ID.
 - [x] **Step 4: Verify** with the focused Jest command and `cd backend && npm test`. Expected: both commands pass. Confirm `frontend/src/pages/Favorites.js` uses its existing placeholder when the stored image is empty.
 - [x] **Step 5: Commit** after `git diff --check` passes.

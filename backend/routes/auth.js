@@ -17,6 +17,7 @@ const safeUser = (user) => ({
   email: user.email,
   avatar: user.avatar,
   createdAt: user.createdAt,
+  emailVerified: Boolean(user.emailVerified),
 });
 // ── validation chains ────────────────────────────────────
 const registerValidators = [
@@ -58,14 +59,21 @@ router.post('/register', registerValidators, async (req, res) => {
       });
     }
 
-    const user = new User({ username, email, password });
+    const crypto = require('crypto');
+    const rawVerificationToken = crypto.randomBytes(32).toString('hex');
+    const user = new User({
+      username, email, password,
+      emailVerified: false,
+      emailVerificationToken: crypto.createHash('sha256').update(rawVerificationToken).digest('hex'),
+      emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
     await user.save();
 
     const token = generateToken(user._id);
 
-    // Send welcome email (non-blocking — failure won't affect registration)
-    emailService.sendWelcome({ to: user.email, username: user.username })
-      .catch(err => console.error('Welcome email failed:', err.message));
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email/${rawVerificationToken}`;
+    emailService.sendEmailVerification({ to: user.email, username: user.username, verificationUrl })
+      .catch(err => console.error('Verification email failed:', err.message));
 
     return res.status(201).json({
       message: 'Account created successfully',
@@ -111,7 +119,46 @@ router.post('/login', loginValidators, async (req, res) => {
   }
 });
 
-// ── GET /api/auth/me ─────────────────────────────────────
+
+// Email verification tokens are hashed at rest, single-use, and expire after 24 hours.
+router.get('/verify-email/:token', async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const user = await User.findOne({ emailVerificationToken: hashedToken, emailVerificationExpires: { $gt: new Date() } })
+      .select('+emailVerificationToken +emailVerificationExpires');
+    if (!user) return res.status(400).json({ message: 'Verification link is invalid or has expired.' });
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+    emailService.sendWelcome({ to: user.email, username: user.username })
+      .catch(err => console.error('Welcome email failed:', err.message));
+    return res.json({ message: 'Email verified. You can now use GameHub email features.' });
+  } catch (err) {
+    console.error('Email verification error:', err.message);
+    return res.status(500).json({ message: 'Server error verifying email.' });
+  }
+});
+
+router.post('/resend-verification', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.emailVerified) return res.json({ message: 'Email is already verified.' });
+    const crypto = require('crypto');
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    req.user.emailVerificationToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+    req.user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await req.user.save({ validateBeforeSave: false });
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email/${rawToken}`;
+    const result = await emailService.sendEmailVerification({ to: req.user.email, username: req.user.username, verificationUrl });
+    if (!result.success) return res.status(503).json({ message: 'Could not send a verification email. Try again later.' });
+    return res.json({ message: 'A new verification email has been sent to your account address.' });
+  } catch (err) {
+    console.error('Resend verification error:', err.message);
+    return res.status(500).json({ message: 'Server error sending verification email.' });
+  }
+});// ── GET /api/auth/me ─────────────────────────────────────
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');

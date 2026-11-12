@@ -36,7 +36,7 @@ const GameSection = ({ title, load, href, emptyMessage }) => {
     <section style={{ marginBottom: 32 }} aria-label={title}>
       <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
         <h2 className="font-black uppercase" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)', fontSize: 20 }}>{title}</h2>
-        <Link to={href} style={{ color: 'var(--text-muted)', fontSize: 12 }}>View all →</Link>
+        {href && <Link to={href} style={{ color: 'var(--text-muted)', fontSize: 12 }}>View all →</Link>}
       </div>
       {loading && <p role="status" style={{ color: 'var(--text-muted)' }}>Loading {title.toLowerCase()}…</p>}
       {error && <div role="alert" style={{ color: 'var(--text-secondary)' }}>Could not load {title.toLowerCase()}. <button type="button" aria-label={`Retry ${title}`} onClick={() => setAttempt((value) => value + 1)}><FaRedo /> Retry</button></div>}
@@ -69,7 +69,7 @@ const Home = () => {
         <div className="flex gap-3" style={{ marginTop: 16 }}><Link to="/discover" className="px-5 py-3 rounded-lg font-bold" style={{ background: 'var(--accent)', color: 'var(--bg-root)' }}>Search games</Link><Link to="/browse" className="px-5 py-3 rounded-lg" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Browse catalog</Link></div>
       </header>
 
-      <GameSection title="Trending games" load={loadTrending} href="/" emptyMessage="No trending games are available right now." />
+      <GameSection title="Trending games" load={loadTrending} emptyMessage="No trending games are available right now." />
       <GameSection title="Top rated" load={loadTopRated} href="/charts" emptyMessage="No top-rated games are available right now." />
       <GameSection title="Upcoming releases" load={loadUpcoming} href="/upcoming" emptyMessage="No upcoming releases are available right now." />
 

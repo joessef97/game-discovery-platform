@@ -16,13 +16,15 @@ import Wishlist from './pages/Wishlist';
 import Recent from './pages/Recent';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 function AppContent() {
   const location = useLocation();
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname)
-    || location.pathname.startsWith('/reset-password/');
+    || location.pathname.startsWith('/reset-password/')
+    || location.pathname.startsWith('/verify-email/');
 
   if (isAuthPage) {
     return (
@@ -36,6 +38,7 @@ function AppContent() {
             <Route path="/register"          element={<Register />} />
             <Route path="/forgot-password"   element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
           </Routes>
         </div>
       </div>

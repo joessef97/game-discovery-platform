@@ -57,3 +57,11 @@
 - [x] **Step 4: Remove reset URL logging** when email delivery fails while preserving the generic response for known and unknown addresses.
 - [x] **Step 5: Verify** with the focused Jest command and `cd backend && npm test`. Expected: both commands pass.
 - [x] **Step 6: Commit** after `git diff --check` passes.
+
+### Review follow-up: verify the account email before test delivery
+
+- [x] Add hashed, 24-hour single-use email verification tokens and a resend path.
+- [x] Send verification email after registration and welcome email after confirmation.
+- [x] Block authenticated test email until `emailVerified` is true.
+- [x] Add a verification completion page and a Profile resend action.
+- [x] Verify token reuse fails and resend uses a fresh token; full suites/build pass.

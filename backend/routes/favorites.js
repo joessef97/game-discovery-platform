@@ -23,13 +23,14 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { gameId, gameName, gameImage } = req.body;
-    const parsedGameId = Number(gameId);
-    if (!Number.isSafeInteger(parsedGameId) || parsedGameId <= 0 || !String(gameName || '').trim()) {
+    const validGameId = /^[1-9]\d*$/.test(String(gameId));
+    const parsedGameId = validGameId ? Number(gameId) : NaN;
+    if (!Number.isSafeInteger(parsedGameId) || !String(gameName || '').trim()) {
       return res.status(400).json({ message: 'A valid game ID and name are required' });
     }
 
     const user = await User.findById(req.user._id);
-    const existingFavorite = user.favorites.find((fav) => fav.gameId === parseInt(gameId));
+    const existingFavorite = user.favorites.find((fav) => fav.gameId === parsedGameId);
     if (existingFavorite) return res.status(400).json({ message: 'Game is already in favorites' });
 
     user.favorites.unshift({ gameId: parsedGameId, gameName: String(gameName).trim(), gameImage: typeof gameImage === 'string' ? gameImage : '' });

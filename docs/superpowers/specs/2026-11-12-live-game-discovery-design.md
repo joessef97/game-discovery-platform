@@ -20,7 +20,7 @@ Home will use those existing services instead of Steam-ID fixtures. All game lin
 
 ## Correctness and security fixes
 
-- Remove the public email test route and its guessable fallback secret. The authenticated test route sends only to the authenticated account’s verified address, not an arbitrary request-provided recipient.
+- Remove the public email test route and its guessable fallback secret. New accounts receive a 24-hour, single-use email verification link; test email is available only after verification and always targets the verified account address.
 - Never log password-reset URLs or raw reset tokens when email delivery fails. Keep the same generic response for existing and nonexistent addresses.
 - When Steam title search and IGDB `external_games` lookup fail, return not-found instead of treating a Steam App ID as an IGDB game ID.
 - Include `createdAt` in the safe login/register user response so Profile can render membership time immediately.
@@ -29,7 +29,7 @@ Home will use those existing services instead of Steam-ID fixtures. All game lin
 
 ## Error handling and verification
 
-Validate genre identifiers, page numbers, and page sizes before using them in IGDB queries. Preserve the project’s existing response conventions and show errors in the UI. The existing CI workflow covers backend tests, frontend tests, and the production build. No local test run is planned for this change; changes will be reviewed against the existing test coverage and the CI workflow after they are pushed.
+Validate genre identifiers, page numbers, and page sizes before using them in IGDB queries. Preserve the project’s existing response conventions and show errors in the UI. The existing CI workflow covers backend tests, frontend tests, and the production build. Focused backend and frontend regression tests, both full test suites, and the production frontend build are included; the user explicitly authorized local verification.
 
 ## Out of scope
 
