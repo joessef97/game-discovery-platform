@@ -83,4 +83,22 @@ describe('gameService', () => {
     await gameService.getGameDetails(1022);
     expect(api.get).toHaveBeenCalledWith('/games/1022');
   });
+
+
+  it('requests live genres and platforms', async () => {
+    api.get.mockResolvedValue({ data: [{ id: 5, name: 'Shooter' }] });
+    await gameService.getGenres();
+    expect(api.get).toHaveBeenLastCalledWith('/games/genres');
+    await gameService.getPlatforms();
+    expect(api.get).toHaveBeenLastCalledWith('/games/platforms');
+  });
+
+  it('sends category filters and page size to IGDB-backed endpoints', async () => {
+    await gameService.searchGames('hollow knight', 2, 24, { genreId: 5, platformId: 6 });
+    expect(api.get).toHaveBeenCalledWith('/games/search?query=hollow%20knight&page=2&page_size=24&genre_id=5&platform_id=6');
+    await gameService.getGamesByGenre(5, 3, 24);
+    expect(api.get).toHaveBeenCalledWith('/games/genre/5?page=3&page_size=24');
+    await gameService.getGamesByPlatform(6, 1, 24);
+    expect(api.get).toHaveBeenCalledWith('/games/platform/6?page=1&page_size=24');
+  });
 });

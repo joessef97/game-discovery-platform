@@ -8,6 +8,10 @@ jest.mock('../services/igdbService', () => {
   return {
     ...actual,
     searchGames: jest.fn(),
+    getGenres: jest.fn(),
+    getPlatforms: jest.fn(),
+    getGamesByGenre: jest.fn(),
+    getGamesByPlatform: jest.fn(),
     getGameDetails: jest.fn(),
     getTrendingGames: jest.fn(),
     getUpcomingGames: jest.fn(),
@@ -174,5 +178,52 @@ describe('GET /api/games/steam/:steamId', () => {
 describe('GET /api/games/user/search-history', () => {
   it('requires authentication', async () => {
     expect((await request(app).get('/api/games/user/search-history')).status).toBe(401);
+  });
+});
+
+describe('live IGDB categories', () => {
+  it('returns IGDB genre IDs and names', async () => {
+    igdb.getGenres.mockResolvedValue([{ id: 5, name: 'Shooter' }]);
+    const res = await request(app).get('/api/games/genres');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: 5, name: 'Shooter' }]);
+  });
+
+  it('returns IGDB platform IDs and names', async () => {
+    igdb.getPlatforms.mockResolvedValue([{ id: 6, name: 'PC' }]);
+    const res = await request(app).get('/api/games/platforms');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: 6, name: 'PC' }]);
+  });
+
+  it('returns formatted genre and platform results with pagination', async () => {
+    igdb.getGamesByGenre.mockResolvedValue([RAW]);
+    igdb.getGamesByPlatform.mockResolvedValue([RAW]);
+    const genre = await request(app).get('/api/games/genre/5?page=2&page_size=10');
+    const platform = await request(app).get('/api/games/platform/6?page=1&page_size=10');
+    expect(genre.status).toBe(200);
+    expect(genre.body).toMatchObject({ count: 1, next: null, previous: true });
+    expect(genre.body.results[0]).toMatchObject({ id: 1022, name: 'The Legend of Zelda' });
+    expect(platform.status).toBe(200);
+    expect(platform.body.results[0]).toMatchObject({ id: 1022, name: 'The Legend of Zelda' });
+    expect(igdb.getGamesByGenre).toHaveBeenCalledWith(5, 10, 10);
+    expect(igdb.getGamesByPlatform).toHaveBeenCalledWith(6, 10, 0);
+  });
+
+  it.each([
+    ['/api/games/genre/nope'], ['/api/games/genre/0'], ['/api/games/platform/nope'],
+    ['/api/games/platform/0'], ['/api/games/genre/5?page=0'], ['/api/games/platform/6?page_size=41'],
+  ])('rejects invalid IDs or page values for %s without an IGDB request', async (url) => {
+    const res = await request(app).get(url);
+    expect(res.status).toBe(400);
+    expect(igdb.getGamesByGenre).not.toHaveBeenCalled();
+    expect(igdb.getGamesByPlatform).not.toHaveBeenCalled();
+  });
+
+  it('forwards validated genre and platform search filters', async () => {
+    igdb.searchGames.mockResolvedValue([]);
+    const res = await request(app).get('/api/games/search?query=zelda&genre_id=5&platform_id=6');
+    expect(res.status).toBe(200);
+    expect(igdb.searchGames).toHaveBeenCalledWith('zelda', 20, 0, { genreId: 5, platformId: 6 });
   });
 });

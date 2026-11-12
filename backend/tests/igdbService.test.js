@@ -159,3 +159,38 @@ describe('formatGameData', () => {
     expect(out.screenshots).toEqual([]);
   });
 });
+
+describe('IGDB category queries', () => {
+  it('queries IGDB games by genre ID', async () => {
+    const request = jest.spyOn(igdb, 'makeRequest').mockResolvedValue([]);
+    await igdb.getGamesByGenre(5, 20, 0);
+    expect(request).toHaveBeenCalledWith('games', expect.stringContaining('where genres = 5'));
+    request.mockRestore();
+  });
+
+  it('queries IGDB games by platform ID', async () => {
+    const request = jest.spyOn(igdb, 'makeRequest').mockResolvedValue([]);
+    await igdb.getGamesByPlatform(6, 20, 0);
+    expect(request).toHaveBeenCalledWith('games', expect.stringContaining('where platforms = 6'));
+    request.mockRestore();
+  });
+});
+
+describe('getGameBySteamId', () => {
+  it('returns null when no name match or Steam mapping exists', async () => {
+    const request = jest.spyOn(igdb, 'makeRequest').mockResolvedValue([]);
+    const details = jest.spyOn(igdb, 'getGameDetails');
+    await expect(igdb.getGameBySteamId('123')).resolves.toBeNull();
+    expect(request).toHaveBeenCalledWith('external_games', expect.stringContaining('uid = "123"'));
+    expect(details).not.toHaveBeenCalled();
+    request.mockRestore(); details.mockRestore();
+  });
+
+  it('resolves Steam external game IDs to their IGDB game ID', async () => {
+    const request = jest.spyOn(igdb, 'makeRequest').mockResolvedValue([{ game: 1022 }]);
+    const details = jest.spyOn(igdb, 'getGameDetails').mockResolvedValue({ id: 1022, name: 'The Legend of Zelda' });
+    await expect(igdb.getGameBySteamId('123')).resolves.toMatchObject({ id: 1022 });
+    expect(details).toHaveBeenCalledWith(1022);
+    request.mockRestore(); details.mockRestore();
+  });
+});
