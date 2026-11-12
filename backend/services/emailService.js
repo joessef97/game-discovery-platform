@@ -130,6 +130,15 @@ async function sendWelcome({ to, username }) {
   return send({ to, subject: 'Welcome to GameHub 🎮', html });
 }
 
+async function sendEmailVerification({ to, username, verificationUrl }) {
+  const html = layout(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:22px;font-weight:800;">Verify your email address</h2>
+    <p style="color:rgba(255,255,255,0.6);line-height:1.7;margin:0;">Hi <strong style="color:#fff;">${username}</strong>, confirm this address to finish setting up your GameHub account.</p>
+    ${btn(verificationUrl, 'Verify email')}
+    ${muted('This link expires in 24 hours. If you did not create this account, you can ignore this email.')}
+  `);
+  return send({ to, subject: 'GameHub — Verify your email', html });
+}
 /**
  * Send a test email (used by the /api/email/test endpoint)
  */
@@ -146,4 +155,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'GameHub — Email Test ✅', html });
 }
 
-module.exports = { send, sendPasswordReset, sendWelcome, sendTest };
+module.exports = { send, sendPasswordReset, sendWelcome, sendEmailVerification, sendTest };

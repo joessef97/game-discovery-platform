@@ -1,8 +1,32 @@
 import api from './api';
 
 const gameService = {
-  async searchGames(query, page = 1) {
-    const response = await api.get(`/games/search?query=${encodeURIComponent(query)}&page=${page}`);
+  async searchGames(query, page = 1, pageSize = 20, filters = {}) {
+    const params = new URLSearchParams({ query, page: String(page) });
+    if (pageSize !== 20 || filters.genreId || filters.platformId) params.set('page_size', String(pageSize));
+    if (filters.genreId) params.set('genre_id', String(filters.genreId));
+    if (filters.platformId) params.set('platform_id', String(filters.platformId));
+    const response = await api.get(`/games/search?${params.toString().replace(/\+/g, '%20')}`);
+    return response.data;
+  },
+
+  async getGenres() {
+    const response = await api.get('/games/genres');
+    return response.data;
+  },
+
+  async getPlatforms() {
+    const response = await api.get('/games/platforms');
+    return response.data;
+  },
+
+  async getGamesByGenre(id, page = 1, pageSize = 20) {
+    const response = await api.get(`/games/genre/${encodeURIComponent(id)}?page=${page}&page_size=${pageSize}`);
+    return response.data;
+  },
+
+  async getGamesByPlatform(id, page = 1, pageSize = 20) {
+    const response = await api.get(`/games/platform/${encodeURIComponent(id)}?page=${page}&page_size=${pageSize}`);
     return response.data;
   },
 

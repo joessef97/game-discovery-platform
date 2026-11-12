@@ -11,6 +11,16 @@ const authService = {
     return response.data;
   },
 
+  async resendVerification() {
+    const response = await api.post('/auth/resend-verification');
+    return response.data;
+  },
+
+  async verifyEmail(token) {
+    const response = await api.get(`/auth/verify-email/${encodeURIComponent(token)}`);
+    return response.data;
+  },
+
   async getCurrentUser() {
     const response = await api.get('/auth/me');
     return response.data;

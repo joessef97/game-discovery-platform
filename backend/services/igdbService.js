@@ -74,20 +74,45 @@ class IGDBService {
     }
   }
 
-  async searchGames(query, limit = 20, offset = 0) {
+  async getGenres(limit = 100, offset = 0) {
+    const query = `fields id, name; limit ${limit}; offset ${offset}; sort name asc;`;
+    return this.makeRequest('genres', query);
+  }
+
+  async getPlatforms(limit = 100, offset = 0) {
+    const query = `fields id, name; limit ${limit}; offset ${offset}; sort name asc;`;
+    return this.makeRequest('platforms', query);
+  }
+
+  async getGamesByGenre(genreId, limit = 20, offset = 0) {
+    const query = `fields name, cover.url, first_release_date, rating, genres.name, platforms.name, summary; limit ${limit}; offset ${offset}; where genres = ${genreId} & cover != null; sort rating desc;`;
+    return this.makeRequest('games', query);
+  }
+
+  async getGamesByPlatform(platformId, limit = 20, offset = 0) {
+    const query = `fields name, cover.url, first_release_date, rating, genres.name, platforms.name, summary; limit ${limit}; offset ${offset}; where platforms = ${platformId} & cover != null; sort rating desc;`;
+    return this.makeRequest('games', query);
+  }
+  async searchGames(query, limit = 20, offset = 0, filters = {}) {
+    const safeQuery = String(query).replace(/["\\]/g, '\\$&');
+    const categoryFilters = [
+      Number.isInteger(filters.genreId) && filters.genreId > 0 ? `genres = ${filters.genreId}` : null,
+      Number.isInteger(filters.platformId) && filters.platformId > 0 ? `platforms = ${filters.platformId}` : null,
+    ].filter(Boolean);
+    const where = categoryFilters.length ? `where ${categoryFilters.join(' & ')};` : '';
     const searchQuery = `
-      search "${query}";
-      fields name, cover.url, first_release_date, rating, genres.name, platforms.name, 
+      search "${safeQuery}";
+      ${where}
+      fields name, cover.url, first_release_date, rating, genres.name, platforms.name,
              summary, storyline, screenshots.url, videos.video_id, involved_companies.company.name,
              involved_companies.developer, involved_companies.publisher,
              age_ratings.organization, age_ratings.rating_category;
       limit ${limit};
       offset ${offset};
     `;
-    
+
     return this.makeRequest('games', searchQuery);
   }
-
   // Games with a confirmed future release date, soonest first.
   // category = 0 keeps DLC/editions/bundles out of the list.
   async getUpcomingGames(limit = 20, offset = 0) {
@@ -247,7 +272,7 @@ class IGDBService {
     // Preferred: search by game name (most reliable)
     if (gameName) {
       const nameQuery = `
-        search "${gameName}";
+        search "${String(gameName).replace(/["\\]/g, '\\$&')}";
         fields name, cover.url, first_release_date, rating, genres.name, platforms.name,
                summary, storyline, screenshots.url, videos.video_id,
                involved_companies.company.name, involved_companies.developer,
@@ -284,8 +309,8 @@ class IGDBService {
       console.log('external_games lookup failed, skipping:', e.message);
     }
 
-    // Fallback 2: treat steamAppId as raw IGDB ID (for search-result links)
-    return this.getGameDetails(steamAppId);
+    // Steam App IDs are not IGDB IDs, so do not guess when unmapped.
+    return null;
   }
 
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaHeart, FaHistory, FaGamepad, FaSearch } from 'react-icons/fa';
+import { FaUser, FaHeart, FaHistory, FaSearch } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import gameService from '../services/gameService';
 import favoriteService from '../services/favoriteService';
+import authService from '../services/authService';
 
 const S = {
   page: { paddingTop: 'calc(var(--topbar-height) + var(--sp-6))', paddingLeft: 'calc(var(--sidebar-width) + var(--sp-6))', paddingRight: 'var(--sp-6)', paddingBottom: 'var(--sp-10)', minHeight: '100vh', animation: 'fadeIn 0.4s ease-out' },
@@ -30,6 +31,8 @@ const Profile = () => {
   const [stats, setStats] = useState({ favoritesCount: 0, searchHistoryCount: 0 });
   const [searchHistory, setSearchHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
 
   useEffect(() => { loadProfileData(); }, []);
 
@@ -44,6 +47,18 @@ const Profile = () => {
   };
 
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const resendVerification = async () => {
+    setResendingVerification(true);
+    setVerificationMessage('');
+    try {
+      const response = await authService.resendVerification();
+      setVerificationMessage(response.message);
+    } catch (error) {
+      setVerificationMessage(error.response?.data?.message || 'Could not send a verification email.');
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   if (loading) return <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'50vh',gap:'var(--sp-4)'}}><div className="spinner"></div></div>;
 
@@ -55,7 +70,11 @@ const Profile = () => {
         <div style={S.info}>
           <h1 style={S.username}>{user?.username}</h1>
           <p style={S.email}>{user?.email}</p>
-          <p style={S.memberDate}>Member since {formatDate(user?.createdAt)}</p>
+          <p style={S.memberDate}>Member since {formatDate(user?.createdAt)}</p>          {!user?.emailVerified && <div style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: 12 }}>
+            <p>Verify your email address to enable account email features.</p>
+            <button type="button" disabled={resendingVerification} onClick={resendVerification}>{resendingVerification ? 'Sending…' : 'Resend verification email'}</button>
+            {verificationMessage && <p role="status">{verificationMessage}</p>}
+          </div>}
         </div>
       </div>
 
@@ -63,7 +82,6 @@ const Profile = () => {
         {[
           { icon: <FaHeart style={{color:'var(--color-heart)'}} />, bg: 'rgba(244,63,94,0.1)', val: stats.favoritesCount, label: 'Favorite Games' },
           { icon: <FaHistory style={{color:'var(--accent)'}} />, bg: 'var(--accent-dim)', val: stats.searchHistoryCount, label: 'Searches Made' },
-          { icon: <FaGamepad style={{color:'var(--color-success)'}} />, bg: 'rgba(34,197,94,0.1)', val: '∞', label: 'Games to Discover' },
         ].map((s, i) => (
           <div key={i} style={S.statCard}
             onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--border-hover)';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='var(--shadow-lg)';}}

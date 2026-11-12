@@ -10,6 +10,7 @@ process.env.FRONTEND_URL = 'http://localhost:3000';
 jest.mock('../services/emailService', () => ({
   send: jest.fn().mockResolvedValue({ success: true }),
   sendWelcome: jest.fn().mockResolvedValue({ success: true }),
+  sendEmailVerification: jest.fn().mockResolvedValue({ success: true }),
   sendPasswordReset: jest.fn().mockResolvedValue({ success: true }),
   sendTest: jest.fn().mockResolvedValue({ success: true }),
 }));

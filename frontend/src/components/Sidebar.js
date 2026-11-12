@@ -3,10 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FaHome, FaCompass, FaList, FaCalendarAlt, FaTrophy,
-  FaNewspaper, FaUsers, FaGamepad, FaBookmark, FaHistory,
-  FaDesktop, FaXbox,
+  FaGamepad, FaBookmark, FaHistory,
+  FaDesktop,
 } from 'react-icons/fa';
-import { SiPlaystation, SiNintendoswitch } from 'react-icons/si';
 
 const NAV_ITEMS = [
   { to: '/', icon: FaHome, label: 'Home', exact: true },
@@ -14,8 +13,6 @@ const NAV_ITEMS = [
   { to: '/browse', icon: FaList, label: 'Browse' },
   { to: '/upcoming', icon: FaCalendarAlt, label: 'Upcoming' },
   { to: '/charts', icon: FaTrophy, label: 'Top Charts' },
-  { to: '/news', icon: FaNewspaper, label: 'News' },
-  { to: '/community', icon: FaUsers, label: 'Community' },
 ];
 
 const LIBRARY_ITEMS = [
@@ -25,10 +22,7 @@ const LIBRARY_ITEMS = [
 ];
 
 const PLATFORMS = [
-  { to: '/discover?q=PC', icon: FaDesktop, label: 'PC', color: 'var(--text-secondary)' },
-  { to: '/discover?q=PlayStation', icon: SiPlaystation, label: 'PlayStation', color: '#2d73f5' },
-  { to: '/discover?q=Xbox', icon: FaXbox, label: 'Xbox', color: '#4ca82b' },
-  { to: '/discover?q=Switch', icon: SiNintendoswitch, label: 'Switch', color: '#e4000f' },
+  { to: '/browse', icon: FaDesktop, label: 'Genres & Platforms', color: 'var(--text-secondary)' },
 ];
 
 const Sidebar = () => {
@@ -121,54 +115,13 @@ const Sidebar = () => {
 
       {/* ── User Card ── */}
       {isAuthenticated && (
-        <Link
-          to="/profile"
-          className="mx-3 mt-4 p-3 rounded-xl transition-all hover:bg-white/5"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: 'rgba(212,245,60,0.15)', color: '#d4f53c' }}
-            >
+        <Link to="/profile" className="mx-3 mt-4 p-3 rounded-xl transition-all hover:bg-white/5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'rgba(212,245,60,0.15)', color: '#d4f53c' }}>
               {user?.username?.slice(0, 2)?.toUpperCase() || 'P1'}
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-white truncate" style={{ fontFamily: 'var(--font-body)' }}>
-                {user?.username || 'PlayerOne'}
-              </div>
-              <div className="flex items-center gap-1.5">
-                {user?.isPro && (
-                  <span
-                    className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                    style={{ background: '#d4f53c', color: '#0a0a0f', fontFamily: 'var(--font-display)' }}
-                  >
-                    PRO
-                  </span>
-                )}
-              </div>
-            </div>
+            <div className="min-w-0 text-sm font-semibold text-white truncate">{user?.username || 'Player'}</div>
           </div>
-          {/* Level + XP using real user data */}
-          {(() => {
-            const level = user?.level ?? 1;
-            const xp = user?.xp ?? 0;
-            const xpForNext = level * 1000; // XP needed to reach next level
-            const pct = Math.min(100, Math.round((xp / xpForNext) * 100));
-            return (
-              <>
-                <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Level {level} · {xp.toLocaleString()} / {xpForNext.toLocaleString()} XP
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, background: '#d4f53c', boxShadow: '0 0 8px rgba(212,245,60,0.3)' }}
-                  />
-                </div>
-              </>
-            );
-          })()}
         </Link>
       )}
     </aside>

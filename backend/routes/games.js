@@ -10,15 +10,24 @@ const router = express.Router();
 // @access  Public
 router.get('/search', async (req, res) => {
   try {
-    const { query, page = 1, page_size = 20 } = req.query;
+    const { query } = req.query;
+    const pagination = categoryPagination(req, res);
+    if (!pagination) return;
 
     if (!query) {
       return res.status(400).json({ message: 'Search query is required' });
     }
 
-    const offset = (page - 1) * page_size;
-    const games = await igdbService.searchGames(query, page_size, offset);
-
+    const { page, pageSize, offset } = pagination;
+    const genreId = req.query.genre_id === undefined ? null : positiveInteger(req.query.genre_id);
+    const platformId = req.query.platform_id === undefined ? null : positiveInteger(req.query.platform_id);
+    if ((req.query.genre_id !== undefined && genreId === null) || (req.query.platform_id !== undefined && platformId === null)) {
+      return res.status(400).json({ message: 'Invalid genre_id or platform_id' });
+    }
+    const filters = {};
+    if (genreId !== null) filters.genreId = genreId;
+    if (platformId !== null) filters.platformId = platformId;
+    const games = await igdbService.searchGames(query, pageSize, offset, filters);
     // Format games data
     const formattedGames = games.map(game => igdbService.formatGameData(game));
 
@@ -45,7 +54,7 @@ router.get('/search', async (req, res) => {
     res.json({
       results: formattedGames,
       count: formattedGames.length,
-      next: formattedGames.length === page_size ? true : null,
+      next: formattedGames.length === pageSize ? true : null,
       previous: page > 1 ? true : null
     });
   } catch (error) {
@@ -75,6 +84,67 @@ router.get('/steam/:steamId', async (req, res) => {
 });
 
 
+// Parse bounded positive integers before passing client values to IGDB.
+function positiveInteger(value, fallback, max = Number.MAX_SAFE_INTEGER) {
+  if (value === undefined) return fallback;
+  if (!/^[1-9]\d*$/.test(String(value))) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed <= max ? parsed : null;
+}
+
+function categoryPagination(req, res) {
+  const page = positiveInteger(req.query.page, 1);
+  const pageSize = positiveInteger(req.query.page_size, 20, 40);
+  if (page === null || pageSize === null) {
+    res.status(400).json({ message: 'Invalid page or page_size (page >= 1, page_size 1-40)' });
+    return null;
+  }
+  const offset = (page - 1) * pageSize;
+  if (!Number.isSafeInteger(offset)) {
+    res.status(400).json({ message: 'Page offset is too large' });
+    return null;
+  }
+  return { page, pageSize, offset };
+}
+
+router.get('/genres', async (_req, res) => {
+  try {
+    const categories = await igdbService.getGenres(100, 0);
+    res.json(categories.map(({ id, name }) => ({ id, name })));
+  } catch (error) {
+    console.error('Genre list error:', error.message);
+    res.status(500).json({ message: 'Error fetching genres' });
+  }
+});
+
+router.get('/platforms', async (_req, res) => {
+  try {
+    const categories = await igdbService.getPlatforms(100, 0);
+    res.json(categories.map(({ id, name }) => ({ id, name })));
+  } catch (error) {
+    console.error('Platform list error:', error.message);
+    res.status(500).json({ message: 'Error fetching platforms' });
+  }
+});
+
+function categoryGames(service, idParam, label) {
+  return async (req, res) => {
+    const id = positiveInteger(req.params[idParam]);
+    const pagination = categoryPagination(req, res);
+    if (id === null) return res.status(400).json({ message: `Invalid ${label} ID` });
+    if (!pagination) return;
+    try {
+      const games = await service(id, pagination.pageSize, pagination.offset);
+      const results = games.map(game => igdbService.formatGameData(game));
+      res.json({ results, count: results.length, next: results.length === pagination.pageSize ? true : null, previous: pagination.page > 1 ? true : null });
+    } catch (error) {
+      console.error(`${label} games error:`, error.message);
+      res.status(500).json({ message: `Error fetching ${label} games` });
+    }
+  };
+}
+router.get('/genre/:genreId', categoryGames(igdbService.getGamesByGenre.bind(igdbService), 'genreId', 'genre'));
+router.get('/platform/:platformId', categoryGames(igdbService.getGamesByPlatform.bind(igdbService), 'platformId', 'platform'));
 // @route   GET /api/games/:id
 // @desc    Get game details by IGDB ID
 // @access  Public
@@ -104,72 +174,48 @@ router.get('/:id', async (req, res) => {
 // @access  Public
 router.get('/trending/popular', async (req, res) => {
   try {
-    const { page = 1, page_size = 20 } = req.query;
-    
-    const offset = (page - 1) * page_size;
-    const games = await igdbService.getTrendingGames(page_size, offset);
-
-    // Format games data
-    const formattedGames = games.map(game => igdbService.formatGameData(game));
-
-    res.json({
-      results: formattedGames,
-      count: formattedGames.length,
-      next: formattedGames.length === page_size ? true : null,
-      previous: page > 1 ? true : null
-    });
+    const pagination = categoryPagination(req, res);
+    if (!pagination) return;
+    const games = await igdbService.getTrendingGames(pagination.pageSize, pagination.offset);
+    const results = games.map(game => igdbService.formatGameData(game));
+    res.json({ results, count: results.length, next: results.length === pagination.pageSize ? true : null, previous: pagination.page > 1 ? true : null });
   } catch (error) {
     console.error('Trending games error:', error.message);
     res.status(500).json({ message: 'Error fetching trending games' });
   }
 });
-
 // @route   GET /api/games/upcoming
 // @desc    Get games with a confirmed future release date
 // @access  Public
 router.get('/upcoming/list', async (req, res) => {
   try {
-    const { page = 1, page_size = 20 } = req.query;
-    const offset = (page - 1) * page_size;
-
-    const games = await igdbService.getUpcomingGames(parseInt(page_size), offset);
-    const formatted = games.map(game => ({
-      ...igdbService.formatGameData(game),
-      hypes: game.hypes || 0,
-    }));
-
-    res.json({ results: formatted, count: formatted.length });
+    const pagination = categoryPagination(req, res);
+    if (!pagination) return;
+    const games = await igdbService.getUpcomingGames(pagination.pageSize, pagination.offset);
+    const results = games.map(game => ({ ...igdbService.formatGameData(game), hypes: game.hypes || 0 }));
+    res.json({ results, count: results.length, next: results.length === pagination.pageSize ? true : null, previous: pagination.page > 1 ? true : null });
   } catch (error) {
     console.error('Upcoming games error:', error.message);
     res.status(500).json({ message: 'Error fetching upcoming games' });
   }
 });
-
 // @route   GET /api/games/top-rated
 // @desc    Get highest-rated released games (optionally since a given year)
 // @access  Public
 router.get('/top-rated/list', async (req, res) => {
   try {
-    const { page = 1, page_size = 20, since } = req.query;
-    const offset = (page - 1) * page_size;
-
-    const games = await igdbService.getTopRatedGames(
-      parseInt(page_size),
-      offset,
-      since ? parseInt(since) : null
-    );
-    const formatted = games.map(game => ({
-      ...igdbService.formatGameData(game),
-      rating_count: game.rating_count || 0,
-    }));
-
-    res.json({ results: formatted, count: formatted.length });
+    const pagination = categoryPagination(req, res);
+    if (!pagination) return;
+    const since = req.query.since === undefined ? null : positiveInteger(req.query.since, null, new Date().getUTCFullYear() + 1);
+    if (req.query.since !== undefined && since === null) return res.status(400).json({ message: 'Invalid since year' });
+    const games = await igdbService.getTopRatedGames(pagination.pageSize, pagination.offset, since);
+    const results = games.map(game => ({ ...igdbService.formatGameData(game), rating_count: game.rating_count || 0 }));
+    res.json({ results, count: results.length, next: results.length === pagination.pageSize ? true : null, previous: pagination.page > 1 ? true : null });
   } catch (error) {
     console.error('Top rated games error:', error.message);
     res.status(500).json({ message: 'Error fetching top rated games' });
   }
 });
-
 // @route   GET /api/games/user/search-history
 // @desc    Get user's search history
 // @access  Private

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -12,19 +12,19 @@ import Discover from './pages/Discover';
 import Browse from './pages/Browse';
 import TopCharts from './pages/TopCharts';
 import Upcoming from './pages/Upcoming';
-import News from './pages/News';
-import Community from './pages/Community';
 import Wishlist from './pages/Wishlist';
 import Recent from './pages/Recent';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 function AppContent() {
   const location = useLocation();
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname)
-    || location.pathname.startsWith('/reset-password/');
+    || location.pathname.startsWith('/reset-password/')
+    || location.pathname.startsWith('/verify-email/');
 
   if (isAuthPage) {
     return (
@@ -38,6 +38,7 @@ function AppContent() {
             <Route path="/register"          element={<Register />} />
             <Route path="/forgot-password"   element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
           </Routes>
         </div>
       </div>
@@ -67,8 +68,8 @@ function AppContent() {
           <Route path="/upcoming"  element={<Upcoming />} />
 
           {/* Sidebar destinations */}
-          <Route path="/news"       element={<News />} />
-          <Route path="/community"  element={<Community />} />
+          <Route path="/news" element={<Navigate to="/browse" replace />} />
+          <Route path="/community" element={<Navigate to="/browse" replace />} />
 
           {/* Auth-protected */}
           <Route
